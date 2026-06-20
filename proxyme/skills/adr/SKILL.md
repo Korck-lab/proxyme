@@ -1,20 +1,20 @@
 ---
 name: adr
-description: "Record Architecture Decision Records for your project. Documents the WHY behind design decisions — proxy carve-outs, operation mode choices, delegation boundaries, identity customizations. /squad-proxy:adr add <title> creates a new ADR; /squad-proxy:adr list shows all; /squad-proxy:adr show <id> displays one."
+description: "Record Architecture Decision Records for your project. Documents the WHY behind design decisions — proxy carve-outs, operation mode choices, delegation boundaries, identity customizations. /proxyme:adr add <title> creates a new ADR; /proxyme:adr list shows all; /proxyme:adr show <id> displays one."
 argument-hint: "add <title> | list | show <id>"
 allowed-tools: Read, Write, Bash
 ---
 
-# /squad-proxy:adr
+# /proxyme:adr
 
 Records Architecture Decision Records (ADRs) for your project — documents the WHY behind your design decisions about proxy configuration, delegation scope, and identity choices.
 
 ## Subcommands
 
 ```
-/squad-proxy:adr add <title>    → create a new ADR interactively
-/squad-proxy:adr list           → list all ADRs in current project
-/squad-proxy:adr show <id>      → display a specific ADR
+/proxyme:adr add <title>    → create a new ADR interactively
+/proxyme:adr list           → list all ADRs in current project
+/proxyme:adr show <id>      → display a specific ADR
 ```
 
 ## Storage
@@ -86,5 +86,5 @@ If no ADRs exist, respond: "No ADRs found in this project."
 ## Notes
 
 - ADRs document project-specific decisions, not plugin decisions
-- Good ADR candidates: custom carve-outs via `/squad-proxy <exception>`, choice of operation mode (--nonew?), proxy identity customizations, delegation boundaries
+- Good ADR candidates: custom carve-outs via `/proxyme <exception>`, choice of operation mode (--nonew?), proxy identity customizations, delegation boundaries
 - ADRs are local to each project and should be committed to your project repository

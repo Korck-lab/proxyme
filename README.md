@@ -1,4 +1,4 @@
-# squad-proxy
+# proxyme
 
 > An Opus agent that thinks like you — briefed from your real Claude Code sessions.
 
@@ -7,7 +7,7 @@
 
 ## What
 
-squad-proxy spawns a persistent Opus 4.8 agent in the background with your identity extracted from your actual Claude Code memories and session history. The proxy:
+proxyme spawns a persistent Opus 4.8 agent in the background with your identity extracted from your actual Claude Code memories and session history. The proxy:
 
 - Answers every question Claude would otherwise ask you
 - Continues in-progress work automatically when activated
@@ -17,16 +17,16 @@ squad-proxy spawns a persistent Opus 4.8 agent in the background with your ident
 ## How it works
 
 ```
-/squad-identity  →  ~/.claude/skills/squad-proxy/${LOGNAME}-identity.md
+/proxyme-identity  →  ~/.claude/skills/proxyme/${LOGNAME}-identity.md
                                     ↓
-/squad-proxy     →  proxy agent (Opus 4.8, mode B+C)
+/proxyme           →  proxy agent (Opus 4.8, mode B+C)
                                     ↓
          ← SendMessage ← any question Claude would ask you
 ```
 
-1. **Identity extraction** — `/squad-identity` analyzes your Claude Code session history and memories (JSONL files in `~/.claude/projects/`) to synthesize your decision-making patterns, preferred stack, communication style, and active projects.
+1. **Identity extraction** — `/proxyme-identity` analyzes your Claude Code session history and memories (JSONL files in `~/.claude/projects/`) to synthesize your decision-making patterns, preferred stack, communication style, and active projects.
 
-2. **Proxy activation** — `/squad-proxy` spawns an Opus agent briefed with your identity file. The proxy runs in background, answering questions you'd normally handle and making decisions within your pre-authorized scope.
+2. **Proxy activation** — `/proxyme` spawns an Opus agent briefed with your identity file. The proxy runs in background, answering questions you'd normally handle and making decisions within your pre-authorized scope.
 
 3. **Delegation** — Instead of asking you "Which approach?", Claude asks the proxy. The proxy responds as if they were you, with your values and judgment.
 
@@ -38,58 +38,72 @@ squad-proxy spawns a persistent Opus 4.8 agent in the background with your ident
 
 ## Installation
 
-[Installation instructions depend on your Claude Code plugin distribution channel. For now: clone this repository and configure the plugin in your Claude Code settings.]
+Add the proxyme marketplace to your Claude Code `settings.json`:
+
+```json
+"extraKnownMarketplaces": {
+  "proxyme-marketplace": {
+    "source": {
+      "source": "github",
+      "repo": "Korck-lab/proxyme"
+    },
+    "autoUpdate": true
+  }
+}
+```
+
+Then install via `/plugin` → Browse → proxyme-marketplace.
 
 ## Quick Start
 
-1. Install the squad-proxy plugin
-2. Run `/squad-identity` to extract your identity from session history
-3. Run `/squad-proxy` to activate your proxy
+1. Install the proxyme plugin
+2. Run `/proxyme-identity` to extract your identity from session history
+3. Run `/proxyme` to activate your proxy
 4. Ask Claude any question — it will be routed to your proxy, which will respond with your authority
 
 ## Commands
 
-### /squad-identity
+### /proxyme-identity
 
 Analyzes your Claude Code memories and sessions (JSONL files in `~/.claude/projects/`) to synthesize your digital identity file.
 
 ```
-/squad-identity
+/proxyme-identity
 ```
 
-**Output:** `~/.claude/skills/squad-proxy/${LOGNAME}-identity.md`
+**Output:** `~/.claude/skills/proxyme/${LOGNAME}-identity.md`
 
 Run once to bootstrap. Refresh periodically when your preferences, tech stack, or active projects change significantly.
 
-### /squad-proxy [--nonew] [exception]
+### /proxyme [--nonew] [exception]
 
 Activates or deactivates your digital proxy.
 
 ```
-/squad-proxy                      # Activate (mode B+C: resume + initiate)
-/squad-proxy --nonew              # Activate mode B only (resume, no new work)
-/squad-proxy <exception>          # Activate + register a carve-out
-/squad-proxy --off                # Deactivate
+/proxyme                      # Activate (mode B+C: resume + initiate)
+/proxyme --nonew              # Activate mode B only (resume, no new work)
+/proxyme <exception>          # Activate + register a carve-out
+/proxyme --off                # Deactivate
 ```
 
 **Flags:**
 - `--nonew`: Mode B only — resume in-progress work but don't initiate new tasks
 - `<exception>`: Register a new carve-out (persisted to `~/.claude/CLAUDE.md`)
 
-### /squad-proxy:adr
+### /proxyme:adr
 
 Records Architecture Decision Records for your project — documents WHY you configured your proxy the way you did.
 
 ```
-/squad-proxy:adr add <title>      # Create a new ADR (interactive)
-/squad-proxy:adr list             # List all ADRs
-/squad-proxy:adr show <id>        # Show a specific ADR
+/proxyme:adr add <title>      # Create a new ADR (interactive)
+/proxyme:adr list             # List all ADRs
+/proxyme:adr show <id>        # Show a specific ADR
 ```
 
 **Storage:** `.claude/adrs/ADR-NNNN-<title>.md` in your project
 
 **Use cases for ADRs:**
-- Documenting custom carve-outs registered via `/squad-proxy <exception>`
+- Documenting custom carve-outs registered via `/proxyme <exception>`
 - Recording why you chose mode B vs. B+C
 - Explaining proxy identity customizations
 - Defining delegation boundaries for your team
@@ -98,9 +112,9 @@ Records Architecture Decision Records for your project — documents WHY you con
 
 Your identity file (`${LOGNAME}-identity.md`) is generated locally from your Claude Code session history. It is:
 
-- **Stored only on your machine** in `~/.claude/skills/squad-proxy/`
+- **Stored only on your machine** in `~/.claude/skills/proxyme/`
 - **Never committed to this repository** (gitignored by default)
-- **Only sent to Claude API** when you activate your proxy via `/squad-proxy`
+- **Only sent to Claude API** when you activate your proxy via `/proxyme`
 - **Never shared or logged** by the plugin
 
 Your session history remains private to your machine.
@@ -129,7 +143,7 @@ Your session history remains private to your machine.
 
 Add exceptions to your proxy's authority with:
 ```
-/squad-proxy <exception description>
+/proxyme <exception description>
 ```
 
 These are persisted in `~/.claude/CLAUDE.md` and will be honored by your proxy in future sessions.
@@ -146,20 +160,20 @@ The identity file includes:
 6. **Technical preferences** — by domain (game dev, web, backend, etc.)
 7. **Operational rules** — what the proxy can decide alone vs. what it must escalate
 
-Refresh your identity periodically by running `/squad-identity` again.
+Refresh your identity periodically by running `/proxyme-identity` again.
 
 ## Modes of operation
 
 ### Mode B+C (default)
 
-When you run `/squad-proxy`:
+When you run `/proxyme`:
 
 - **Mode B:** Proxy scans your session context on activation — pending questions, in-progress work, blockers — and addresses them
 - **Mode C:** If no explicit task is in flight, proxy identifies what's stalled in your project and initiates work directly, reporting what it did
 
 ### Mode B only
 
-Run `/squad-proxy --nonew` to activate mode B only:
+Run `/proxyme --nonew` to activate mode B only:
 
 - Proxy continues in-progress work and answers questions
 - Does NOT initiate new work
@@ -173,19 +187,19 @@ You're in the middle of a refactor and Claude asks "Should we extract this helpe
 
 **Scenario 2: Continuing work in a new session**
 
-You activate `/squad-proxy` in a new session. The proxy scans your context, finds an in-progress branch with a failing test, and reports: "Found in-progress work: test suite is failing on the auth refactor. Starting investigation to identify the blocker."
+You activate `/proxyme` in a new session. The proxy scans your context, finds an in-progress branch with a failing test, and reports: "Found in-progress work: test suite is failing on the auth refactor. Starting investigation to identify the blocker."
 
 **Scenario 3: Carving out an exception**
 
 You want your proxy to never modify your AWS credentials without asking. You run:
 ```
-/squad-proxy "AWS: never assume roles or modify credentials without explicit user approval in chat"
+/proxyme "AWS: never assume roles or modify credentials without explicit user approval in chat"
 ```
 
 This exception is registered and persists across sessions.
 
 ## License
 
-MIT © 2026 squad-proxy contributors
+MIT © 2026 proxyme contributors
 
 See [LICENSE](LICENSE) for details.

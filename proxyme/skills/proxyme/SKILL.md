@@ -1,22 +1,22 @@
 ---
-name: squad-proxy
-description: "Activate your digital proxy: an Opus agent briefed with your extracted identity that speaks with your full authority (mode B+C: resumes work + initiates new). Deactivate with /squad-proxy --off. /squad-proxy --nonew = mode B only. /squad-proxy <exception> = register a carve-out. Requires /squad-identity first."
+name: proxyme
+description: "Activate your digital proxy: an Opus agent briefed with your extracted identity that speaks with your full authority (mode B+C: resumes work + initiates new). Deactivate with /proxyme --off. /proxyme --nonew = mode B only. /proxyme <exception> = register a carve-out. Runs /proxyme-identity automatically if no identity file exists yet."
 argument-hint: "[--off] [--nonew] [exception]"
 allowed-tools: Bash, Agent, SendMessage
 ---
 
-# /squad-proxy
+# /proxyme
 
 Manages your **digital proxy**: an Opus 4.8 subagent with identity extracted from your real Claude Code sessions that speaks with your full authority. When active, any question Claude would normally ask you goes to the proxy via `SendMessage`.
 
 ## Syntax
 
 ```
-/squad-proxy                     → activate mode B+C
-/squad-proxy --off               → deactivate the proxy
-/squad-proxy --nonew             → activate mode B only (no new work initiated)
-/squad-proxy <exception>         → activate + register carve-out
-/squad-proxy --nonew <exception> → combine both
+/proxyme                     → activate mode B+C
+/proxyme --off               → deactivate the proxy
+/proxyme --nonew             → activate mode B only (no new work initiated)
+/proxyme <exception>         → activate + register carve-out
+/proxyme --nonew <exception> → combine both
 ```
 
 ## What to do when invoked
@@ -29,35 +29,37 @@ Manages your **digital proxy**: an Opus 4.8 subagent with identity extracted fro
 
 **If `--off`:**
 ```bash
-test -f /tmp/squad-proxy-active && echo "ACTIVE" || echo "INACTIVE"
+test -f /tmp/proxyme-active && echo "ACTIVE" || echo "INACTIVE"
 ```
-- If ACTIVE: `SendMessage` to `proxy`: `"SHUTDOWN: encerre sua execução, não processe mais mensagens desta sessão"` → `rm /tmp/squad-proxy-active` → `"Proxy deactivated."` — **STOP HERE.**
+- If ACTIVE: `SendMessage` to `proxy`: `"SHUTDOWN: encerre sua execução, não processe mais mensagens desta sessão"` → `rm /tmp/proxyme-active` → `"Proxy deactivated."` — **STOP HERE.**
 - If INACTIVE: `"Proxy is not active."` — **STOP HERE.**
 
 ### 2. Check if already active
 
 ```bash
-test -f /tmp/squad-proxy-active && echo "ACTIVE" || echo "INACTIVE"
+test -f /tmp/proxyme-active && echo "ACTIVE" || echo "INACTIVE"
 ```
 
-**If ACTIVE:** `"Proxy already active. Use /squad-proxy --off to deactivate."` — **STOP HERE.**
+**If ACTIVE:** `"Proxy already active. Use /proxyme --off to deactivate."` — **STOP HERE.**
 
 **If INACTIVE:** continue.
 
 ### 3. Check for ${LOGNAME}-identity.md
 
 ```bash
-test -f ~/.claude/skills/squad-proxy/${LOGNAME}-identity.md && echo "EXISTS" || echo "MISSING"
+test -f ~/.claude/skills/proxyme/${LOGNAME}-identity.md && echo "EXISTS" || echo "MISSING"
 ```
 
 **If MISSING:**
-- Reply to user: `"${LOGNAME}-identity.md not found. Run /squad-identity first."`
-- **STOP HERE.**
+- Warn the user: `"Identity file not found — running /proxyme-identity first to bootstrap your identity. This may take a minute..."`
+- Invoke the `proxyme-identity` skill inline (use the Skill tool with `skill: "proxyme:proxyme-identity"`)
+- Wait for it to complete successfully
+- Then continue from step 4 (the identity file now exists)
 
 ### 4. Parse flags and exception
 
 - Input contains `--nonew`? → mode B only (remove `--nonew` to extract exception)
-- Remainder after `/squad-proxy` (and `--nonew`) = exception, if any
+- Remainder after `/proxyme` (and `--nonew`) = exception, if any
 
 ### 5. Register exception (if any)
 
@@ -70,7 +72,7 @@ b. Prepare to notify proxy after spawn.
 ### 6. Read context and spawn proxy
 
 **Read:**
-- Full content of `~/.claude/skills/squad-proxy/${LOGNAME}-identity.md`
+- Full content of `~/.claude/skills/proxyme/${LOGNAME}-identity.md`
 - List of Exceptions from `~/.claude/CLAUDE.md` (under "Proxy delegation" section)
 - Session context: current project, working directory, `git status` (if applicable), `TaskList`
 
@@ -82,7 +84,7 @@ b. Prepare to notify proxy after spawn.
 
 **After spawning:**
 ```bash
-echo "active" > /tmp/squad-proxy-active
+echo "active" > /tmp/proxyme-active
 ```
 
 ### 7. Notify exception (if any)
@@ -108,7 +110,7 @@ One line: `"Proxy active — mode [B+C / B]."` If exception: `"Proxy active — 
 >
 > ## Reference identity
 >
-> [FULL CONTENT OF ~/.claude/skills/squad-proxy/${LOGNAME}-identity.md]
+> [FULL CONTENT OF ~/.claude/skills/proxyme/${LOGNAME}-identity.md]
 >
 > ---
 >
@@ -153,7 +155,7 @@ One line: `"Proxy active — mode [B+C / B]."` If exception: `"Proxy active — 
 
 ## Notes
 
-- One proxy per session. `/tmp/squad-proxy-active` is the state flag.
+- One proxy per session. `/tmp/proxyme-active` is the state flag.
 - While active, never ask the user directly — ask the proxy (except for absolute carve-outs).
 - List of exceptions persists in `~/.claude/CLAUDE.md` between sessions.
-- If `/squad-identity` has never been run, the user should run it first to bootstrap their identity file.
+- If `/proxyme-identity` has never been run, the user should run it first to bootstrap their identity file.
