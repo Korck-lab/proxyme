@@ -5,11 +5,8 @@
   "author": {
     "name": "squad-proxy contributors"
   },
-  "skills": [
-    "skills/squad-proxy",
-    "skills/squad-identity",
-    "skills/adr"
-  ],
+  "license": "MIT",
   "keywords": ["proxy", "identity", "autonomous", "delegation", "opus", "digital-twin"],
-  "license": "MIT"
+  "repository": "https://github.com/Korck-lab/squad-proxy",
+  "homepage": "https://github.com/Korck-lab/squad-proxy"
 }
