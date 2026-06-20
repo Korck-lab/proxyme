@@ -9,3 +9,5 @@ graphify-out/
 .claude/
 .dev-squad/
 claudei.sh
+AGENTS.md
+docs/
