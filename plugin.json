@@ -1,0 +1,15 @@
+{
+  "name": "squad-proxy",
+  "version": "0.1.0",
+  "description": "Spawn an Opus agent briefed with your identity — extracted from your real Claude Code sessions — that speaks with your authority, continues in-progress work, and makes decisions on your behalf.",
+  "author": {
+    "name": "squad-proxy contributors"
+  },
+  "skills": [
+    "skills/squad-proxy",
+    "skills/squad-identity",
+    "skills/adr"
+  ],
+  "keywords": ["proxy", "identity", "autonomous", "delegation", "opus", "digital-twin"],
+  "license": "MIT"
+}

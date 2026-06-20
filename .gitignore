@@ -1,0 +1,11 @@
+# User identity files — generated per-user by /squad-identity, never commit
+skills/squad-proxy/*-identity.md
+*-identity.md
+
+# Dev tooling
+.superpowers/
+graphify-out/
+.remember/
+.claude/
+.dev-squad/
+claudei.sh
