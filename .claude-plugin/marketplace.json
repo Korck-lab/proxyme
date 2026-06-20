@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "squad-proxy-marketplace",
+  "description": "Marketplace for the squad-proxy plugin",
+  "owner": {
+    "name": "Korck Lab",
+    "email": "rafael.aguilher@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "squad-proxy",
+      "version": "0.1.0",
+      "description": "Spawn an Opus agent briefed with your identity — extracted from your real Claude Code sessions — that speaks with your authority, continues in-progress work, and makes decisions on your behalf.",
+      "author": {
+        "name": "squad-proxy contributors"
+      },
+      "source": "./squad-proxy",
+      "category": "development"
+    }
+  ]
+}
