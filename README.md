@@ -1,13 +1,13 @@
 # proxyme
 
-> An Opus agent that thinks like you — briefed from your real Claude Code sessions.
+> A Claude Code plugin that spawns an AI proxy briefed with your real identity — so Claude stops asking you questions and just gets things done.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blue.svg)](https://claude.com/code)
 
 ## What
 
-proxyme spawns a persistent Opus 4.8 agent in the background with your identity extracted from your actual Claude Code memories and session history. The proxy:
+proxyme is a Claude Code plugin. It spawns a persistent agent in the background briefed with your identity — extracted from your actual Claude Code memories and session history. The proxy:
 
 - Answers every question Claude would otherwise ask you
 - Continues in-progress work automatically when activated
@@ -19,21 +19,20 @@ proxyme spawns a persistent Opus 4.8 agent in the background with your identity 
 ```
 /proxyme-identity  →  ~/.claude/skills/proxyme/${LOGNAME}-identity.md
                                     ↓
-/proxyme           →  proxy agent (Opus 4.8, mode B+C)
+/proxyme           →  proxy agent (best available model, mode B+C)
                                     ↓
          ← SendMessage ← any question Claude would ask you
 ```
 
 1. **Identity extraction** — `/proxyme-identity` analyzes your Claude Code session history and memories (JSONL files in `~/.claude/projects/`) to synthesize your decision-making patterns, preferred stack, communication style, and active projects.
 
-2. **Proxy activation** — `/proxyme` spawns an Opus agent briefed with your identity file. The proxy runs in background, answering questions you'd normally handle and making decisions within your pre-authorized scope.
+2. **Proxy activation** — `/proxyme` spawns an agent briefed with your identity file. The proxy runs in background, answering questions you'd normally handle and making decisions within your pre-authorized scope.
 
 3. **Delegation** — Instead of asking you "Which approach?", Claude asks the proxy. The proxy responds as if they were you, with your values and judgment.
 
 ## Prerequisites
 
 - Claude Code CLI (version 3.0+)
-- Claude Max subscription or higher (Opus 4.8 billed to your account)
 - Claude Code session history (`~/.claude/projects/` with JSONL files from recent sessions)
 
 ## Installation
@@ -86,9 +85,23 @@ Activates or deactivates your digital proxy.
 /proxyme --off                # Deactivate
 ```
 
+If no identity file exists yet, `/proxyme` runs `/proxyme-identity` automatically before activating.
+
 **Flags:**
 - `--nonew`: Mode B only — resume in-progress work but don't initiate new tasks
 - `<exception>`: Register a new carve-out (persisted to `~/.claude/CLAUDE.md`)
+
+### /proxyme:model [set | reset]
+
+Configure which model and effort level the proxy uses.
+
+```
+/proxyme:model          # Show current config
+/proxyme:model set      # Interactive picker (model + effort)
+/proxyme:model reset    # Restore defaults
+```
+
+Default: best available model, maximum effort. Saved to `~/.claude/skills/proxyme/config.json`.
 
 ### /proxyme:adr
 
@@ -201,5 +214,6 @@ This exception is registered and persists across sessions.
 ## License
 
 MIT © 2026 proxyme contributors
+
 
 See [LICENSE](LICENSE) for details.

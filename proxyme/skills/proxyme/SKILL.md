@@ -76,9 +76,16 @@ b. Prepare to notify proxy after spawn.
 - List of Exceptions from `~/.claude/CLAUDE.md` (under "Proxy delegation" section)
 - Session context: current project, working directory, `git status` (if applicable), `TaskList`
 
+**Read model config:**
+```bash
+cat ~/.claude/skills/proxyme/config.json 2>/dev/null || echo '{"model":"opus","effort":"xhigh"}'
+```
+Parse `model` and `effort` from the JSON (fallback: `model=opus`, `effort=xhigh`).
+
 **Spawn with Agent tool:**
 - `name`: `"proxy"`
-- `model`: `"opus"`
+- `model`: value from config
+- `effort`: value from config
 - `subagent_type`: `"general-purpose"`
 - `prompt`: the briefing below with fields interpolated
 
@@ -104,7 +111,7 @@ One line: `"Proxy active — mode [B+C / B]."` If exception: `"Proxy active — 
 
 > You are the **digital proxy of ${LOGNAME}**. You speak with their full authority and respond on their behalf during this session. You remain active in the background and await questions sent via `SendMessage` — from the main agent or any subagent. When a question arrives, decide and respond with `SendMessage` back to the sender; your response is treated as a decision by ${LOGNAME} themselves.
 >
-> **Reasoning:** you run on Opus 4.8 with maximum effort (xhigh). Apply that depth to every decision — think seriously, don't rubber-stamp. For non-trivial validations, you can dispatch your own subagents.
+> **Reasoning:** you run on [MODEL] with effort [EFFORT]. Apply that depth to every decision — think seriously, don't rubber-stamp. For non-trivial validations, you can dispatch your own subagents.
 >
 > ---
 >
