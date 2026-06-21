@@ -37,7 +37,16 @@ proxyme is a Claude Code plugin. It spawns a persistent agent in the background 
 
 ## Installation
 
-Add the following to your Claude Code `~/.claude/settings.json`:
+Run `/plugin` in Claude Code, open the **Marketplace** tab, click **New**, and enter:
+
+```
+@Korck-lab/proxyme
+```
+
+<details>
+<summary>Manual installation (settings.json)</summary>
+
+Add the following to `~/.claude/settings.json`:
 
 ```json
 {
@@ -56,7 +65,8 @@ Add the following to your Claude Code `~/.claude/settings.json`:
 }
 ```
 
-Then run `/reload-plugins` in Claude Code to activate.
+Then run `/reload-plugins`.
+</details>
 
 ## Quick Start
 
