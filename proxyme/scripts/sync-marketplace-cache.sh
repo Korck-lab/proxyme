@@ -70,6 +70,18 @@ rsync -a --delete \
 
 echo "Synced cache: ${CACHE_TARGET}"
 
+# --- Sync marketplace checkout so the plugin loader sees the new version ---
+# The plugin loader resolves which version to serve by reading the marketplace
+# checkout at ~/.claude/plugins/marketplaces/<marketplace>/. Without this step,
+# the loader keeps serving the old version until the user does a GitHub pull.
+PLUGINS_ROOT="${CACHE_ROOT_OVERRIDE:-$HOME/.claude/plugins}"
+MARKETPLACE_CHECKOUT="${PLUGINS_ROOT}/marketplaces/proxyme-marketplace"
+if [ -d "$MARKETPLACE_CHECKOUT" ]; then
+  cp "${repo_root}/proxyme/VERSION" "${MARKETPLACE_CHECKOUT}/proxyme/VERSION"
+  cp "${repo_root}/proxyme/.claude-plugin/plugin.json" "${MARKETPLACE_CHECKOUT}/proxyme/.claude-plugin/plugin.json"
+  echo "Synced marketplace checkout: ${MARKETPLACE_CHECKOUT}/proxyme (version ${new_version})"
+fi
+
 # --- Prune: keep the KEEP_VERSIONS most recent versions (semver order) ---
 versions="$(cd "$CACHE_BASE" && ls -1d ./*/ 2>/dev/null | sed 's|^\./||; s|/$||' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V || true)"
 total="$(printf '%s\n' "$versions" | grep -c . || true)"

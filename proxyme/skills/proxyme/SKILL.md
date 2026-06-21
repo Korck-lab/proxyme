@@ -2,7 +2,7 @@
 name: proxyme
 description: "Activate your digital proxy: an Opus agent briefed with your extracted identity that speaks with your full authority (mode B+C: resumes work + initiates new). Deactivate with /proxyme --off. /proxyme --nonew = mode B only. /proxyme <exception> = register a carve-out. Runs /proxyme-identity automatically if no identity file exists yet."
 argument-hint: "[--off] [--nonew] [exception]"
-allowed-tools: Bash, Agent, SendMessage
+allowed-tools: Bash, Agent, SendMessage, Skill
 ---
 
 # /proxyme
@@ -46,11 +46,15 @@ test -f /tmp/proxyme-active && echo "ACTIVE" || echo "INACTIVE"
 
 ### 3. Check for ${LOGNAME}-identity.md
 
+**IMPORTANT:** This file is stored globally at `~/.claude/skills/proxyme/` and persists across ALL projects and sessions. ALWAYS run the bash check below — never assume the file is missing just because you are in a new project or new session.
+
 ```bash
 test -f ~/.claude/skills/proxyme/${LOGNAME}-identity.md && echo "EXISTS" || echo "MISSING"
 ```
 
-**If MISSING:**
+**If the command outputs "EXISTS":** the identity file is present — skip to step 4 immediately. Do NOT run proxyme-identity.
+
+**If the command outputs "MISSING":**
 - Warn the user: `"Identity file not found — running /proxyme-identity first to bootstrap your identity. This may take a minute..."`
 - Invoke the `proxyme-identity` skill inline (use the Skill tool with `skill: "proxyme:proxyme-identity"`)
 - Wait for it to complete successfully
