@@ -37,21 +37,26 @@ proxyme is a Claude Code plugin. It spawns a persistent agent in the background 
 
 ## Installation
 
-Add the proxyme marketplace to your Claude Code `settings.json`:
+Add the following to your Claude Code `~/.claude/settings.json`:
 
 ```json
-"extraKnownMarketplaces": {
-  "proxyme-marketplace": {
-    "source": {
-      "source": "github",
-      "repo": "Korck-lab/proxyme"
-    },
-    "autoUpdate": true
+{
+  "extraKnownMarketplaces": {
+    "proxyme-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "Korck-lab/proxyme"
+      },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "proxyme@proxyme-marketplace": true
   }
 }
 ```
 
-Then install via `/plugin` → Browse → proxyme-marketplace.
+Then run `/reload-plugins` in Claude Code to activate.
 
 ## Quick Start
 
