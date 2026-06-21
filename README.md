@@ -89,22 +89,25 @@ Analyzes your Claude Code memories and sessions (JSONL files in `~/.claude/proje
 
 Run once to bootstrap. Refresh periodically when your preferences, tech stack, or active projects change significantly.
 
-### /proxyme [--nonew] [exception]
+### /proxyme [--nonew] [--except "..."] [instruction]
 
 Activates or deactivates your digital proxy.
 
 ```
-/proxyme                      # Activate (mode B+C: resume + initiate)
-/proxyme --nonew              # Activate mode B only (resume, no new work)
-/proxyme <exception>          # Activate + register a carve-out
-/proxyme --off                # Deactivate
+/proxyme                                    # Activate (mode B+C: resume + initiate)
+/proxyme --nonew                            # Activate mode B only (resume, no new work)
+/proxyme --except "never rename files"      # Activate + register a session carve-out
+/proxyme focus on the auth refactor         # Activate + send instruction to proxy
+/proxyme --nonew --except "..." <instr>     # Combine any flags and instruction
+/proxyme --off                              # Deactivate
 ```
 
 If no identity file exists yet, `/proxyme` runs `/proxyme-identity` automatically before activating.
 
 **Flags:**
-- `--nonew`: Mode B only — resume in-progress work but don't initiate new tasks
-- `<exception>`: Register a new carve-out (persisted to `~/.claude/CLAUDE.md`)
+- `--nonew`: Mode B only — resume in-progress work but don't initiate new tasks. Default is **false** (mode B+C)
+- `--except "<text>"`: Register a session carve-out (persisted to `~/.claude/CLAUDE.md` across sessions)
+- `[instruction]`: Optional free-form text forwarded to the proxy immediately after spawn. One-time — not persisted
 
 ### /proxyme:model [set | reset]
 
@@ -171,7 +174,7 @@ Your session history remains private to your machine.
 
 Add exceptions to your proxy's authority with:
 ```
-/proxyme <exception description>
+/proxyme --except "exception description"
 ```
 
 These are persisted in `~/.claude/CLAUDE.md` and will be honored by your proxy in future sessions.
@@ -221,10 +224,19 @@ You activate `/proxyme` in a new session. The proxy scans your context, finds an
 
 You want your proxy to never modify your AWS credentials without asking. You run:
 ```
-/proxyme "AWS: never assume roles or modify credentials without explicit user approval in chat"
+/proxyme --except "AWS: never assume roles or modify credentials without explicit user approval in chat"
 ```
 
 This exception is registered and persists across sessions.
+
+**Scenario 4: Sending a one-time instruction**
+
+You want the proxy to focus on a specific area when it activates:
+```
+/proxyme focus on the auth refactor, ignore everything else
+```
+
+The instruction is sent to the proxy immediately after spawn but is not persisted to future sessions.
 
 ## License
 
