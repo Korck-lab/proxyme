@@ -1,31 +1,37 @@
 ---
 name: proxyme
-description: "Activate your digital proxy: an Opus agent briefed with your extracted identity that speaks with your full authority (mode B+C: resumes work + initiates new). Deactivate with /proxyme --off. /proxyme --nonew = mode B only. /proxyme <exception> = register a carve-out. Runs /proxyme-identity automatically if no identity file exists yet."
-argument-hint: "[--off] [--nonew] [exception]"
+description: "Activate your digital proxy: an Opus agent briefed with your extracted identity that speaks with your full authority (default: mode B+C — resumes work + proactive new checks). Deactivate with /proxyme --off. --nonew = mode B only. --except \"<carve-out>\" = register a session exception. Optional positional instruction passed directly to the proxy on spawn. Runs /proxyme-identity automatically if no identity file exists yet."
+argument-hint: "[--off] [--nonew] [--except \"<carve-out>\"] [instruction]"
 allowed-tools: Bash, Agent, SendMessage, Skill
 ---
 
 # /proxyme
 
-Manages your **digital proxy**: an Opus 4.8 subagent with identity extracted from your real Claude Code sessions that speaks with your full authority. When active, any question Claude would normally ask you goes to the proxy via `SendMessage`.
+Manages your **digital proxy**: an Opus subagent with identity extracted from your real Claude Code sessions that speaks with your full authority. When active, any question Claude would normally ask you goes to the proxy via `SendMessage`.
 
 ## Syntax
 
 ```
-/proxyme                     → activate mode B+C
-/proxyme --off               → deactivate the proxy
-/proxyme --nonew             → activate mode B only (no new work initiated)
-/proxyme <exception>         → activate + register carve-out
-/proxyme --nonew <exception> → combine both
+/proxyme                                    → activate mode B+C (default)
+/proxyme --off                              → deactivate the proxy
+/proxyme --nonew                            → activate mode B only (no new work initiated)
+/proxyme --except "do not rename files"     → activate + register session carve-out
+/proxyme --nonew --except "..." instruction → combine flags + pass instruction
+/proxyme focus on the auth refactor         → activate + send instruction to proxy on spawn
 ```
+
+**Defaults:** `--nonew` is **false** — mode C (proactive new checks) is active by default.
 
 ## What to do when invoked
 
-### 1. Parse flags
+### 1. Parse input
 
-- Input contains `--off`? → deactivation flow below
-- Input contains `--nonew`? → mode B only
-- Remainder (after removing flags) = exception, if any
+Extract from the full input string:
+
+- `--off` present? → deactivation flow below
+- `--nonew` present? → set mode = B only; otherwise mode = B+C (default)
+- `--except "<text>"` present? → extract the carve-out text (value after `--except`, may be quoted or unquoted until next flag or end of input)
+- Remainder after removing `--off`, `--nonew`, `--except <value>` = **instruction** (optional free-form text to send to proxy on spawn)
 
 **If `--off`:**
 ```bash
@@ -60,20 +66,15 @@ test -f ~/.claude/skills/proxyme/${LOGNAME}-identity.md && echo "EXISTS" || echo
 - Wait for it to complete successfully
 - Then continue from step 4 (the identity file now exists)
 
-### 4. Parse flags and exception
+### 4. Register exception (if any)
 
-- Input contains `--nonew`? → mode B only (remove `--nonew` to extract exception)
-- Remainder after `/proxyme` (and `--nonew`) = exception, if any
-
-### 5. Register exception (if any)
-
-If exception was passed:
+If `--except` was passed:
 a. Open `~/.claude/CLAUDE.md` and add bullet to **Exceptions** list under "Proxy delegation" section:
    - If section has `_(none yet)_` → replace with bullet
    - If already has bullets → append new bullet to end of list
 b. Prepare to notify proxy after spawn.
 
-### 6. Read context and spawn proxy
+### 5. Read context and spawn proxy
 
 **Read:**
 - Full content of `~/.claude/skills/proxyme/${LOGNAME}-identity.md`
@@ -98,16 +99,20 @@ Parse `model` and `effort` from the JSON (fallback: `model=opus`, `effort=xhigh`
 echo "active" > /tmp/proxyme-active
 ```
 
-### 7. Notify exception (if any)
+### 6. Send post-spawn messages (if any)
 
-```
-SendMessage to "proxy":
-"New exception registered — you CANNOT decide this alone, escalate to the real user: <exception>"
-```
+Send each applicable message to `"proxy"` via `SendMessage`, in order:
 
-### 8. Confirm to user
+1. If `--except` was passed: `"New exception registered — you CANNOT decide this alone, escalate to the real user: <carve-out>"`
+2. If **instruction** was passed: `"Instruction from user: <instruction>"`
 
-One line: `"Proxy active — mode [B+C / B]."` If exception: `"Proxy active — mode B+C — exception registered: <exception>."`
+### 7. Confirm to user
+
+One line summarizing what was activated. Examples:
+- `"Proxy active — mode B+C."`
+- `"Proxy active — mode B."`
+- `"Proxy active — mode B+C — exception: do not rename files."`
+- `"Proxy active — mode B+C — instruction sent: focus on the auth refactor."`
 
 ---
 
@@ -168,5 +173,6 @@ One line: `"Proxy active — mode [B+C / B]."` If exception: `"Proxy active — 
 
 - One proxy per session. `/tmp/proxyme-active` is the state flag.
 - While active, never ask the user directly — ask the proxy (except for absolute carve-outs).
-- List of exceptions persists in `~/.claude/CLAUDE.md` between sessions.
+- Exceptions registered with `--except` persist in `~/.claude/CLAUDE.md` between sessions.
+- Instructions passed positionally are one-time — they are sent to the proxy on spawn but not persisted.
 - If `/proxyme-identity` has never been run, the user should run it first to bootstrap their identity file.
