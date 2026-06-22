@@ -7,26 +7,26 @@
 
 ## What
 
-proxyme is a Claude Code plugin. It spawns a persistent agent in the background briefed with your identity — extracted from your actual Claude Code memories and session history. The proxy:
+proxyme is a Claude Code plugin. It spawns a **read-only, consultative** agent briefed with your identity — extracted from your actual Claude Code memories and session history. The proxy:
 
-- Answers every question Claude would otherwise ask you
-- Continues in-progress work automatically when activated
-- Initiates new work when nothing is in flight (mode B+C)
-- Speaks with your full authority on technical decisions, prioritization, and approach
+- Answers every question Claude would otherwise ask you, with your full authority
+- Advises on how to continue in-progress work when activated
+- Proactively recommends what to work on next when nothing is in flight (mode B+C)
+- **Never executes** — it decides and advises; the main agent does all the work and is the only one that touches your files
 
 ## How it works
 
 ```
 /proxyme-identity  →  ~/.claude/skills/proxyme/${LOGNAME}-identity.md
                                     ↓
-/proxyme           →  proxy agent (best available model, mode B+C)
+/proxyme           →  proxy agent (read-only consultant, best model, mode B+C)
                                     ↓
          ← SendMessage ← any question Claude would ask you
 ```
 
 1. **Identity extraction** — `/proxyme-identity` analyzes your Claude Code session history and memories (JSONL files in `~/.claude/projects/`) to synthesize your decision-making patterns, preferred stack, communication style, and active projects.
 
-2. **Proxy activation** — `/proxyme` spawns an agent briefed with your identity file. The proxy runs in background, answering questions you'd normally handle and making decisions within your pre-authorized scope.
+2. **Proxy activation** — `/proxyme` spawns an agent briefed with your identity file. The proxy runs as a read-only consultant, answering questions you'd normally handle and making decisions within your pre-authorized scope — without ever editing files or running commands itself.
 
 3. **Delegation** — Instead of asking you "Which approach?", Claude asks the proxy. The proxy responds as if they were you, with your values and judgment.
 
@@ -94,8 +94,8 @@ Run once to bootstrap. Refresh periodically when your preferences, tech stack, o
 Activates or deactivates your digital proxy.
 
 ```
-/proxyme                                    # Activate (mode B+C: resume + initiate)
-/proxyme --nonew                            # Activate mode B only (resume, no new work)
+/proxyme                                    # Activate (mode B+C: resume + proactively advise)
+/proxyme --nonew                            # Activate mode B only (advise on current work, no proactive advice)
 /proxyme --except "never rename files"      # Activate + register a session carve-out
 /proxyme focus on the auth refactor         # Activate + send instruction to proxy
 /proxyme --nonew --except "..." <instr>     # Combine any flags and instruction
@@ -105,7 +105,7 @@ Activates or deactivates your digital proxy.
 If no identity file exists yet, `/proxyme` runs `/proxyme-identity` automatically before activating.
 
 **Flags:**
-- `--nonew`: Mode B only — resume in-progress work but don't initiate new tasks. Default is **false** (mode B+C)
+- `--nonew`: Mode B only — advise on in-progress work but don't proactively recommend new tasks. Default is **false** (mode B+C). Either way the proxy only advises; the main agent executes
 - `--except "<text>"`: Register a session carve-out (persisted to `~/.claude/CLAUDE.md` across sessions)
 - `[instruction]`: Optional free-form text forwarded to the proxy immediately after spawn. One-time — not persisted
 
@@ -120,24 +120,6 @@ Configure which model and effort level the proxy uses.
 ```
 
 Default: best available model, maximum effort. Saved to `~/.claude/skills/proxyme/config.json`.
-
-### /proxyme:adr
-
-Records Architecture Decision Records for your project — documents WHY you configured your proxy the way you did.
-
-```
-/proxyme:adr add <title>      # Create a new ADR (interactive)
-/proxyme:adr list             # List all ADRs
-/proxyme:adr show <id>        # Show a specific ADR
-```
-
-**Storage:** `.claude/adrs/ADR-NNNN-<title>.md` in your project
-
-**Use cases for ADRs:**
-- Documenting custom carve-outs registered via `/proxyme <exception>`
-- Recording why you chose mode B vs. B+C
-- Explaining proxy identity customizations
-- Defining delegation boundaries for your team
 
 ## Privacy
 
@@ -195,19 +177,21 @@ Refresh your identity periodically by running `/proxyme-identity` again.
 
 ## Modes of operation
 
+The proxy is **always read-only**. In every mode it decides and advises via `SendMessage`; the main agent is the sole executor and the only one that touches your worktree.
+
 ### Mode B+C (default)
 
 When you run `/proxyme`:
 
-- **Mode B:** Proxy scans your session context on activation — pending questions, in-progress work, blockers — and addresses them
-- **Mode C:** If no explicit task is in flight, proxy identifies what's stalled in your project and initiates work directly, reporting what it did
+- **Mode B:** Proxy scans your session context on activation — pending questions, in-progress work, blockers — and reports what it found and what it would do
+- **Mode C:** If no explicit task is in flight, proxy identifies what's stalled and **recommends** what to prioritize and why — the main agent decides whether to act
 
 ### Mode B only
 
 Run `/proxyme --nonew` to activate mode B only:
 
-- Proxy continues in-progress work and answers questions
-- Does NOT initiate new work
+- Proxy advises on in-progress work and answers questions
+- Does NOT proactively recommend new work
 - Useful when you want to finish what you started before exploring something new
 
 ## Examples
@@ -218,7 +202,7 @@ You're in the middle of a refactor and Claude asks "Should we extract this helpe
 
 **Scenario 2: Continuing work in a new session**
 
-You activate `/proxyme` in a new session. The proxy scans your context, finds an in-progress branch with a failing test, and reports: "Found in-progress work: test suite is failing on the auth refactor. Starting investigation to identify the blocker."
+You activate `/proxyme` in a new session. The proxy scans your context, finds an in-progress branch with a failing test, and reports: "Found in-progress work: test suite is failing on the auth refactor. I'd start by checking the token-expiry mock — point the main agent there and I'll guide it."
 
 **Scenario 3: Carving out an exception**
 
