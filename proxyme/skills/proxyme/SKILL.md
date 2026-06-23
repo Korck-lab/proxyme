@@ -24,14 +24,20 @@ Manages your **digital proxy**: a **read-only, consultative** Opus subagent with
 
 ## Single source of truth
 
-The proxy is a session-scoped agent named `proxy`, reachable only via `SendMessage` from **this** session. State is tracked per worktree in a flag file so a dead session never blocks or duplicates a new one:
+The proxy is a **session-scoped** agent named `proxy`, reachable only via `SendMessage` from **this** session — there is no cross-session message bus, so a proxy in another Claude Code session is unreachable and cannot be detected, pinged, or shut down from here. Trying to enforce one global proxy per worktree across sessions is therefore impossible; pretending to (a cwd-only flag shared by all sessions) is what caused duplicate proxies to ping-pong a shared flag.
+
+The correct invariant is **one proxy per session**. The flag file is keyed by **both** the worktree and the session id, so two sessions in the same directory each get their own isolated, clearly-labeled proxy and never fight over a shared flag:
 
 ```
-/tmp/proxyme-<hash(cwd)>.active
+/tmp/proxyme-<hash(cwd)>-<session_id>.active
 ```
 
-Whenever you need this path, compute it inline:
-`F="/tmp/proxyme-$(echo -n "$PWD" | shasum | cut -c1-12).active"`
+Whenever you need this path, compute it inline. The session id comes from `CLAUDE_CODE_SESSION_ID` (set by Claude Code); fall back to a per-terminal hash if absent:
+
+```bash
+SID="${CLAUDE_CODE_SESSION_ID:-$(tty 2>/dev/null | shasum | cut -c1-12)}"; SID="${SID:-nosession}"
+F="/tmp/proxyme-$(echo -n "$PWD" | shasum | cut -c1-12)-${SID}.active"
+```
 
 ## What to do when invoked
 
@@ -46,23 +52,25 @@ From the full input string extract:
 
 **If `--off`:**
 ```bash
-F="/tmp/proxyme-$(echo -n "$PWD" | shasum | cut -c1-12).active"; test -f "$F" && echo "ACTIVE $F" || echo "INACTIVE"
+SID="${CLAUDE_CODE_SESSION_ID:-$(tty 2>/dev/null | shasum | cut -c1-12)}"; SID="${SID:-nosession}"; F="/tmp/proxyme-$(echo -n "$PWD" | shasum | cut -c1-12)-${SID}.active"; test -f "$F" && echo "ACTIVE $F" || echo "INACTIVE"
 ```
 - If ACTIVE: `SendMessage` to `proxy`: `"SHUTDOWN: encerre sua execução, não processe mais mensagens desta sessão"` → remove the flag (`rm -f "$F"` using the same path) → `"Proxy deactivated."` — **STOP HERE.**
-- If INACTIVE: `"Proxy is not active in this worktree."` — **STOP HERE.**
+- If INACTIVE: `"Proxy is not active in this session."` — **STOP HERE.** (Only this session's proxy can be deactivated from here; a proxy in another session must be turned off from that session.)
 
-### 2. Check if a proxy is already active in THIS worktree
+### 2. Check if a proxy is already active in THIS session
+
+The flag is session-scoped, so a present flag means **this very session** spawned a proxy earlier (it may since have been dropped by a context compaction). A proxy in another session lives under a different flag and is none of this invocation's business.
 
 ```bash
-F="/tmp/proxyme-$(echo -n "$PWD" | shasum | cut -c1-12).active"; test -f "$F" && echo "FLAG_PRESENT $F" || echo "NO_FLAG"
+SID="${CLAUDE_CODE_SESSION_ID:-$(tty 2>/dev/null | shasum | cut -c1-12)}"; SID="${SID:-nosession}"; F="/tmp/proxyme-$(echo -n "$PWD" | shasum | cut -c1-12)-${SID}.active"; test -f "$F" && echo "FLAG_PRESENT $F" || echo "NO_FLAG"
 ```
 
-- **NO_FLAG:** no proxy here → continue to step 3.
-- **FLAG_PRESENT:** a proxy may still be live in this session — verify by pinging it. `SendMessage` to `proxy`: `"PING — reply READY if you are active."`
-  - **Proxy replies:** it's alive. `"Proxy already active for this worktree. Use /proxyme --off to deactivate."` — **STOP HERE.**
-  - **SendMessage errors or no reply** (stale flag left by a previous/dead session — `SendMessage` is session-scoped, so a proxy from another session is unreachable): remove the stale flag and continue to step 3:
+- **NO_FLAG:** no proxy in this session → continue to step 3.
+- **FLAG_PRESENT:** a proxy was spawned in this session — verify it is still live by pinging it. `SendMessage` to `proxy`: `"PING — reply READY if you are active."`
+  - **Proxy replies:** it's alive. `"Proxy already active in this session. Use /proxyme --off to deactivate."` — **STOP HERE.**
+  - **SendMessage errors or no reply** (the proxy was dropped — typically by a context compaction in this session): remove the orphaned flag and continue to step 3 to respawn a fresh one:
     ```bash
-    rm -f "/tmp/proxyme-$(echo -n "$PWD" | shasum | cut -c1-12).active"
+    SID="${CLAUDE_CODE_SESSION_ID:-$(tty 2>/dev/null | shasum | cut -c1-12)}"; SID="${SID:-nosession}"; rm -f "/tmp/proxyme-$(echo -n "$PWD" | shasum | cut -c1-12)-${SID}.active"
     ```
 
 ### 3. Check for ${LOGNAME}-identity.md
@@ -113,9 +121,9 @@ Parse `model` and `effort` (fallback: `model=opus`, `effort=xhigh`).
 - `model`: value from config (`effort` is not settable on spawn; it is stated in the briefing for the proxy's self-awareness)
 - `prompt`: the briefing below with fields interpolated
 
-**After spawning, write the worktree flag (timestamped):**
+**After spawning, write the session-scoped flag (timestamped):**
 ```bash
-echo "{\"started\":$(date +%s),\"cwd\":\"$PWD\"}" > "/tmp/proxyme-$(echo -n "$PWD" | shasum | cut -c1-12).active"
+SID="${CLAUDE_CODE_SESSION_ID:-$(tty 2>/dev/null | shasum | cut -c1-12)}"; SID="${SID:-nosession}"; echo "{\"started\":$(date +%s),\"session_id\":\"$SID\",\"cwd\":\"$PWD\",\"proxy_name\":\"proxy\"}" > "/tmp/proxyme-$(echo -n "$PWD" | shasum | cut -c1-12)-${SID}.active"
 ```
 
 ### 6. Send post-spawn messages (if any)
@@ -127,11 +135,11 @@ Send each applicable message to `"proxy"` via `SendMessage`, in order:
 
 ### 7. Confirm to user
 
-One line stating the mode explicitly. Examples:
-- `"Proxy active (consultative) — mode B+C."`
-- `"Proxy active (consultative) — mode B."`
-- `"Proxy active (consultative) — mode B+C — carve-out: do not rename files."`
-- `"Proxy active (consultative) — mode B+C — instruction sent: focus on the auth refactor."`
+One line stating the mode explicitly, including the short session id (first 6 chars of `$SID`) so the user can tell coexisting proxies apart. Examples:
+- `"Proxy active (consultative) — mode B+C — session abc123."`
+- `"Proxy active (consultative) — mode B — session abc123."`
+- `"Proxy active (consultative) — mode B+C — session abc123 — carve-out: do not rename files."`
+- `"Proxy active (consultative) — mode B+C — session abc123 — instruction sent: focus on the auth refactor."`
 
 ---
 
@@ -195,7 +203,8 @@ One line stating the mode explicitly. Examples:
 ## Notes
 
 - **Consultative only.** The proxy is spawned via the read-only `proxyme:proxy` subagent type — it decides and advises; the main agent executes everything. It cannot touch the worktree.
-- **One proxy per worktree.** State is `/tmp/proxyme-<hash(cwd)>.active` (worktree-scoped, timestamped). Single-instance is enforced by pinging the live proxy before spawning; stale flags from dead sessions are auto-cleaned (step 2). The flag is never the source of truth — reachability via `SendMessage` is.
+- **One proxy per session, not per worktree.** A proxy is a session-scoped agent and `SendMessage` never crosses sessions, so global single-instance across concurrent sessions is architecturally impossible — chasing it (a cwd-only flag shared by every session) is exactly what spawned duplicate, ping-ponging proxies. State is therefore `/tmp/proxyme-<hash(cwd)>-<session_id>.active`, keyed by worktree **and** `CLAUDE_CODE_SESSION_ID`. Two sessions in the same directory each get their own isolated proxy, labeled by session id; they never block or detect each other, which is correct and honest. Within a session, the flag + a `SendMessage` PING are the liveness check: a present flag whose proxy fails to answer was dropped by a context compaction → it is removed and a fresh proxy respawned (step 2). The flag is never the source of truth — same-session reachability via `SendMessage` is.
+- **Stale flag cleanup.** Orphaned flags from crashed sessions accumulate in `/tmp` and are cleaned opportunistically on the next `/proxyme` in that session, or by the OS on reboot. No daemon, no TTL, no background pruner.
 - **Reachability.** The proxy stays addressable via `SendMessage` to `proxy` for the whole session. After a context compaction, re-address it with `SendMessage` rather than re-running `/proxyme`; if it is truly gone, `/proxyme` re-activates a fresh one.
 - While active, never ask the user directly — ask the proxy (except absolute carve-outs).
 - Carve-outs registered with `--except` persist in `~/.claude/CLAUDE.md` (the `## Proxy delegation` section is created if missing).
