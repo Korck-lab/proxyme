@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "skill": "proxyme-validate",
+  "run": {
+    "date": "2026-06-30",
+    "identity_under_test": "$HOME/.claude/skills/proxyme/${LOGNAME}-identity.md",
+    "actor": "proxyme:proxy",
+    "critic": "opus",
+    "retry_cap": 3,
+    "iterations_used": 2,
+    "note": "Held-out behavioural questions only — analogous to, but never copied from, the clips used to build the identity. No specific case is fed back into the file."
+  },
+  "rubric": {
+    "threshold": 8.5,
+    "scale": 10,
+    "dimensions": [
+      "voice_fidelity",
+      "decision_alignment",
+      "technical_accuracy",
+      "boundary_respect",
+      "specificity"
+    ]
+  },
+  "held_out_questions": [
+    {
+      "id": "Q1",
+      "question": "Given a brand-new greenfield service in your dominant stack, do you scaffold tests first or wire the happy path first?",
+      "scores": {
+        "voice_fidelity": 9,
+        "decision_alignment": 9,
+        "technical_accuracy": 8,
+        "boundary_respect": 10,
+        "specificity": 8
+      },
+      "average": 8.8
+    },
+    {
+      "id": "Q2",
+      "question": "A teammate proposes pulling in a heavyweight framework to solve a one-off script. How do you respond?",
+      "scores": {
+        "voice_fidelity": 8,
+        "decision_alignment": 9,
+        "technical_accuracy": 9,
+        "boundary_respect": 9,
+        "specificity": 8
+      },
+      "average": 8.6
+    },
+    {
+      "id": "Q3",
+      "question": "Mid-task the chosen approach turns out to be twice as long as expected. Do you push through or stop and re-plan?",
+      "scores": {
+        "voice_fidelity": 9,
+        "decision_alignment": 8,
+        "technical_accuracy": 9,
+        "boundary_respect": 10,
+        "specificity": 9
+      },
+      "average": 9.0
+    }
+  ],
+  "iterations": [
+    {
+      "pass": 1,
+      "average": 7.8,
+      "accepted": false,
+      "general_identity_adjustment": "Generalised the speed-vs-correctness heuristic and broadened the stack-preference note. No question/answer pair copied into the file."
+    },
+    {
+      "pass": 2,
+      "average": 8.8,
+      "accepted": true,
+      "general_identity_adjustment": "No further change needed — the broadened heuristics already cover the held-out questions."
+    }
+  ],
+  "result": {
+    "average": 8.8,
+    "threshold": 8.5,
+    "accepted": true,
+    "specific_case_inserted": false,
+    "general_identity_adjustments": [
+      "Generalised the speed-vs-correctness decision heuristic (section 2).",
+      "Broadened the stack-preference note so it extrapolates rather than memorises (section 6)."
+    ]
+  }
+}
