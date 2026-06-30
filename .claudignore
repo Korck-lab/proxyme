@@ -1,0 +1,4 @@
+
+# graphify outputs — prevent prompt cache invalidation
+graphify-out/
+graph.json

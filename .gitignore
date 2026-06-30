@@ -6,8 +6,15 @@ skills/squad-proxy/*-identity.md
 .superpowers/
 graphify-out/
 .remember/
-.claude/
-.dev-squad/
 claudei.sh
 AGENTS.md
 docs/
+
+# >>> dev-squad shared team assets (managed — do not edit) >>>
+.claude/*
+!.claude/guardrails/
+!.claude/dev-squad.local.md
+.dev-squad/*
+!.dev-squad/adr/
+!.dev-squad/memory/
+# <<< dev-squad shared team assets (managed) <<<
