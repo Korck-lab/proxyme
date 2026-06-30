@@ -69,27 +69,54 @@ List with `find ~/.claude/projects -path "*/memory/*" -name "project*.md" -o -pa
 Ignore clearly completed or abandoned projects. Return as bulleted project list. Maximum 400 words.
 ```
 
-**Agent D — Sessions** (`name: "proxyme-identity-sessions"`):
+**Agent D — Sessions (SMART-CLIP extraction)** (`name: "proxyme-identity-sessions"`):
 ```
-Find the 5 longest session .jsonl files (most lines) that are not subagents or workflows:
+Sample real user turns from the longest sessions with SMART-CLIP: map each real user
+turn to its line offset, then pull only a bounded context window around it by line
+index. Never load a whole .jsonl into context — clip, do not dump.
+
+1. Pick the 5 longest sessions (most lines), excluding subagents and workflows:
 
 ```bash
 find ~/.claude/projects -name "*.jsonl" \
-  ! -path "*/subagents/*" \
-  ! -path "*/workflows/*" \
-  | xargs wc -l 2>/dev/null \
-  | sort -rn | head -6 | grep -v total
+  ! -path "*/subagents/*" ! -path "*/workflows/*" \
+  | xargs wc -l 2>/dev/null | sort -rn | head -6 | grep -v total
 ```
 
-For each one, extract real user messages (role: "user", no <command-name>, no <system-reminder>, no <local-command>) and analyze:
+2. For each session, map every line to its offset and class with jq — A = assistant,
+   U = real user turn, O = other. A real user turn is `type=="user"` with string
+   content and none of the harness-injected markers: `<command-name>`,
+   `<system-reminder>`, `<local-command>`, `<task-notification>`, a leading
+   `[Image:` or `[Request interrupted`, a compaction summary (`session is being
+   continued`), or a slash-command `Caveat:` echo. (These last markers are NOT
+   human turns — skipping them keeps ~20-50% of harness noise out of the profile.)
+
+```bash
+jq -rc '"\(input_line_number) \(
+  if .type=="assistant" then "A"
+  elif (.type=="user" and (.message.content|type=="string")
+        and ((.message.content)|test("<command-name>|<system-reminder>|<local-command|<task-notification>|^\\[Image:|^\\[Request interrupted|session is being continued|Caveat: The messages below were generated")|not)) then "U"
+  else "O" end)"' "$SESSION"
+```
+
+3. For each real user turn, pull a bounded window by line index — default up to 2
+   assistant turns BEFORE and 2 AFTER, stopping at the next real user turn — and read
+   only those offsets with `sed -n "<line>p"`. The assistant turn(s) before the user
+   turn are the model question of the **Q/A pair**; the turn(s) after are the answer
+   and the **model confirmation-of-understanding** (where the model restates what it
+   will do). The runnable helper that performs this exact line-offset window pull is
+   `proxyme-identity.test.sh` in this folder — run it to see the windowed Q/A records.
+
+4. Label each clip as one of: request / correction-rejection / confirmation / answer,
+   and keep only the most informative ~40 clips across the 5 sessions.
+
+Then consolidate the patterns below in <=600 words (consolidated patterns, not transcriptions):
 
 1. How they formulate requests: style, level of detail, use of slash commands
 2. What they reject mid-task: direct quotes of when they asked to stop, change, or simplify
 3. How much autonomy they give: let you decide or ask for options?
 4. Tone and language: PT-BR? English? Mixed?
 5. Process patterns: prefer research first? Quick iteration? Parallel agents?
-
-Return consolidated patterns (not transcriptions). Maximum 400 words.
 ```
 
 ### 2. Synthesize identity
@@ -170,5 +197,7 @@ Display:
 - List of active projects identified
 - Path to generated file
 - Suggestion: "Run `/proxyme` to activate your proxy with the updated identity."
+
+**Next:** run `/proxyme-validate` to score the new identity against held-out questions before relying on it.
 
 **Note:** The generated identity file is user-specific and should not be committed to the plugin repository.
