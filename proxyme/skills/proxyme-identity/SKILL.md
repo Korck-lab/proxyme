@@ -54,11 +54,13 @@ Return as structured text with subtitles. Maximum 500 words.
 
 **Agent C — Projects** (`name: "proxyme-identity-projects"`):
 ```
-Read all memory files of project type in:
-~/.claude/projects/**/memory/project*.md
-~/.claude/projects/**/memory/*project*.md
+Read all memory files of project type. Filter by frontmatter CONTENT, not by
+filename — a project's memories are usually named by topic (architecture.md,
+playtest-*.md, MEMORY.md), so a "*project*.md" filename glob silently misses
+whole active projects. Match the `type: project` marker (under `metadata:`,
+indented) the same way Agent B matches `type: user`:
 
-List with `find ~/.claude/projects -path "*/memory/*" -name "project*.md" -o -path "*/memory/*" -name "*project*.md" | head -50`, read found files, and for each active project (with activity in last 90 days — check file dates), extract:
+List with `find ~/.claude/projects -path "*/memory/*" -name "*.md" | xargs grep -lE "type: *project" 2>/dev/null`, dedupe by project directory (ignore `*--claude-worktrees-*` mirrors), read found files, and for each active project (with activity in last 90 days — check file dates), extract:
 
 - Project name
 - Current state (in progress, stalled, complete)

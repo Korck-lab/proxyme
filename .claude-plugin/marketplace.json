@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "proxyme",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "description": "Spawn a read-only, consultative Opus agent briefed with your identity — extracted from your real Claude Code sessions — that answers with your authority and advises on your behalf, while the main agent does all the work.",
       "author": {
         "name": "proxyme contributors"
