@@ -1,7 +1,7 @@
 ---
 name: proxyme-validate
 description: "Adversarial actor/critic validation of your digital proxy. Generates analogous, held-out questions from the info collected by /proxyme-identity, queries the proxy hypothesis (actor), scores each answer on a documented scorecard (critic), and iterates the GENERAL identity until the scorecard averages 8.5/10 — never inserting the specific case. Run after /proxyme-identity and before trusting /proxyme."
-allowed-tools: Agent, SendMessage, Read, Edit, Bash
+allowed-tools: Agent, Read, Edit, Bash
 ---
 
 # /proxyme-validate
@@ -12,7 +12,7 @@ Run it after `/proxyme-identity` (which produces `~/.claude/skills/proxyme/${LOG
 
 ## How it works (actor/critic)
 
-- **Actor** — a read-only `proxyme:proxy` spawned with the *candidate* identity. It answers the held-out questions exactly as the live proxy would.
+- **Actor** — a read-only `proxyme:proxy` spawned *fresh* for each held-out question with the *candidate* identity. It answers that one question (one-shot) exactly as the live proxy would, then terminates.
 - **Critic** — a separate Opus agent. It never sees the "right" answer; it scores each actor answer on the rubric below and proposes only *general* identity adjustments.
 - **Adversarial** — the questions are deliberately analogous to (never copied from) the clips used to build the identity, so a memorised answer cannot pass; only a correctly-generalised profile scores well.
 
@@ -37,7 +37,7 @@ The critic scores every answer 0–10 on five dimensions; the answer's score is 
 ## What to do when invoked
 
 1. **Draw held-out questions.** From the collected feedback/session info, generate ~6 analogous questions that probe decisions the identity *implies* but does not state verbatim. Keep them general — no real names, emails, tokens, or absolute personal paths.
-2. **Run the actor.** Spawn `proxyme:proxy` with the candidate identity and `SendMessage` each question; collect the answers.
+2. **Run the actor.** Spawn a FRESH `proxyme:proxy` per held-out question (candidate identity + the question); collect each one-shot answer.
 3. **Run the critic.** Spawn one Opus agent, hand it the rubric and the actor answers, and have it return a scorecard (per-dimension scores + per-question and overall averages) in the `fixtures/sample-scorecard.json` shape.
 4. **Decide (conditional 1).** If the overall average is **≥ 8.5/10**, accept: report the scorecard and stop.
 5. **Iterate (conditional 2).** Else, if retries remain (cap below), apply the critic's *general* adjustments to `${LOGNAME}-identity.md`, re-draw fresh held-out questions, and loop to step 2.
